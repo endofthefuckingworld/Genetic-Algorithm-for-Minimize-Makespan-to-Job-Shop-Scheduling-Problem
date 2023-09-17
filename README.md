@@ -5,6 +5,7 @@ Simple Implementation of Applying Genetic Algorithm to JSSP in Python.
 ## :black_nib: Genetic Algorithm Background
 Genetic algorithms are a type of optimization algorithm inspired by the process of natural selection. They are used to find approximate solutions to complex optimization and search problems.The procedure of applying a genetic algorithm to solve a Job Shop Scheduling Problem (JSSP) involves several steps. Here's an overview of the typical procedure:
 
+  
 
 ### :arrow_down_small: JSSP Solution Encoding <br>
 In the context of the Job Shop Scheduling Problem (JSSP), encoding refers to how you represent a solution to the problem using a data structure that a computer can work with. One common method is encoding a solution as a sequence of jobs ([M. Gen, et al.(1994)](https://ieeexplore.ieee.org/document/400072/)). In this encoding scheme, a chromosome is comprised of a sequence of integers, with each integer representing an operation of a job. The order of these integers within the chromosome specifies the sequence in which operations are to be executed on the machines.
@@ -12,6 +13,8 @@ In the context of the Job Shop Scheduling Problem (JSSP), encoding refers to how
 **Example:**
 Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 correspond to different jobs. In this encoding, The first gene (2) represents the first operation of Job 2,the second gene (3) represents the first operation of Job 3 and the third gene (2) represents the second operation of Job 2.
 
+
+  
 ### :arrow_down_small: Initial Population Generation <br>
 Generate an initial population of schedules. Each schedule represents a possible solution to the JSSP. You can initialize the population randomly or using domain-specific knowledge such as dispatching rules or other heuristic methods. We use randomly initialize the population here.
 
@@ -71,3 +74,11 @@ def job_order_implementation(parent1, parent2, select_job):
     
     return child
 ```
+### :arrow_down_small: Mutation <br>
+
+Ｍutation introduces additional variability into the population, which helps prevent it from prematurely converging towards a local optimum. We mutate genes through gene shifting and the process is as follows:
+  
+1.If the sample probability of a child is less or equal than the mutation probability parameter, the mutation is then executed.  
+2.Randomly select the genes to be shifted and the number of genes to mutate is based on the mutation selection rate. For example, Each 
+chromosome has 36 genes and if the mutation selection rate equals to 0.5, the number of genes to shift is 18.  
+3.Perform gene shifting, as illustrated in the diagram.  
