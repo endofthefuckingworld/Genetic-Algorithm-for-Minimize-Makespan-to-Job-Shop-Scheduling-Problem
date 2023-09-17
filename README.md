@@ -129,3 +129,30 @@ def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
     all_mut = generate_init_pop(num_all_mut, p_t.shape[0], p_t.shape[1])
     childlist = np.concatenate((all_mut,copy.deepcopy(childlist)[partial_mut_id]), axis = 0)
 ```
+### :arrow_down_small: Selection <br>
+Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it here and the process is as follows:  
+1. Two chromosomes are randomly chosen from the population and the best of them is selected for next generation.
+2. Keep the top 10% chromosomes.
+
+```python
+def binary_selection(populationlist, makespan_list):
+    new_population = np.zeros((int(len(populationlist)/2), populationlist.shape[1]), dtype = np.int32)
+    
+    num_self_select = int(0.1*len(populationlist)/2)
+    num_binary = int(len(populationlist)/2) - num_self_select
+    zipped = list(zip(makespan_list, np.arange(len(makespan_list))))
+    sorted_zipped = sorted(zipped, key=lambda x: x[0])
+    zipped = zip(*sorted_zipped)
+    self_select_id = np.asarray(list(zipped)[1])[:num_self_select]
+    
+    for i in range(num_binary):
+        select_id = np.random.choice(len(makespan_list), 2, replace=False)
+        if makespan_list[select_id[0]] < makespan_list[select_id[1]]:
+            new_population[i] = populationlist[select_id[0]]
+        else:
+            new_population[i] = populationlist[select_id[1]]
+    
+    new_population[-num_self_select:] = copy.deepcopy(populationlist)[self_select_id]
+    
+    return new_population
+```
