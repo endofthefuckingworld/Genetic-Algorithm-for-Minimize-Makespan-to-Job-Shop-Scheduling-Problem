@@ -11,5 +11,5 @@ In the context of the Job Shop Scheduling Problem (JSSP), encoding refers to how
 
 In this encoding scheme, a chromosome is comprised of a sequence of integers, with each integer representing an operation of a job. The order of these integers within the chromosome specifies the sequence in which operations are to be executed on the machines.
 
-Example:
-Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 correspond to different jobs. In this encoding, The first gene (2) represents the first operation of the second job (Job 2),the second gene (3) represents the first operation of the third job (Job 3) and the third gene (2) represents the second operation of the second job (Job 2).
+**Example:**
+Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 correspond to different jobs. In this encoding, The first gene (2) represents the first operation of Job 2,the second gene (3) represents the first operation of Job 3 and the third gene (2) represents the second operation of Job 2.
