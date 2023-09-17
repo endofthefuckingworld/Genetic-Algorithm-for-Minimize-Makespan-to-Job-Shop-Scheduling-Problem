@@ -67,6 +67,11 @@ Apply crossover operators to pairs of parent schedules to create new child sched
 3. Copy all job j from parent 1 to child 1 with the same position.  
 4. The remaining empty positions in child 1 are filled with the genes of parent 2 that are different from the job j.
 
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/crossover.gif" width="780" height="420">
+</div>
+<br>
 ```python
 def job_order_crossover(populationlist, j, crossover_rate):
     parentlist = copy.deepcopy(populationlist)
@@ -109,6 +114,11 @@ chromosome has 36 genes and if the mutation selection rate equals to 0.5, the nu
 3. Perform gene shifting, as illustrated in the diagram.
 4. For the last 10% child, replace them with randomly initialized population.
 
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/mutation.gif" width="780" height="420">
+</div>
+<br>
 ```python
 def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
     for chromosome in childlist:
