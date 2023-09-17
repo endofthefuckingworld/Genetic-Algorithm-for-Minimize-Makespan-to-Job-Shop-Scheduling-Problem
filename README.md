@@ -15,9 +15,9 @@ Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 cor
 
 ### :arrow_down_small: Fitness Evaluation <br>
 Evaluate the fitness(Minimized Makespan) of each schedule in the population.According to the formulation of JSSP, The primary constraints in the JSSP include precedence constraints and machine sharing constraints:  
-1.Precedence constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.  
-2.Machine Sharing Constraints: Each machine has its own availability and can only process one operation at a time. This constraint ensures that no machine is overutilized or double-booked.  
-Therefore,the completion time of an operation must be greater to the process time plus completion time of the machine that operation assigned to and the previous operation of the same job.  
+1. Precedence constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.  
+2. Machine Sharing Constraints: Each machine has its own availability and can only process one operation at a time. This constraint ensures that no machine is overutilized or double-booked.  
+Therefore,the completion time of an operation must be greater to the process time plus completion time of the machine that operation assigned to and the previous operation of the same job. We can use this way to evaluate the makespan of the chromosome.
 
 ### :arrow_down_small: Initial Population Generation <br>
 Generate an initial population of schedules. Each schedule represents a possible solution to the JSSP. You can initialize the population randomly or using domain-specific knowledge such as dispatching rules or other heuristic methods. We use randomly initialize the population here.
