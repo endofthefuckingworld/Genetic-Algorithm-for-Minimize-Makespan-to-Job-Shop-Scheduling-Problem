@@ -150,8 +150,8 @@ def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
 ```
 
 ### :arrow_down_small: Selection <br>
-Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it here and the process is as follows:  
-1. The top 10% chromosomes are guarantee to keep for the next generation.
+Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it and the process is as follows:  
+1. The top 10% of chromosomes are guaranteed to be kept for the next generation.
 2. Two chromosomes are randomly chosen from the population and the best of them is selected for next generation. Keep doing that until the next generation is filled.
    
 
