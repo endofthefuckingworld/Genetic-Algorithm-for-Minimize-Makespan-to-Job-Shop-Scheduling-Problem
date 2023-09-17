@@ -130,9 +130,10 @@ def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
     childlist = np.concatenate((all_mut,copy.deepcopy(childlist)[partial_mut_id]), axis = 0)
 ```
 ### :arrow_down_small: Selection <br>
-Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it here and the process is as follows:  
-1. Two chromosomes are randomly chosen from the population and the best of them is selected for next generation.
-2. Keep the top 10% chromosomes.
+Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it here and the process is as follows:  
+1. The top 10% chromosomes are guarantee to keep for the next generation.
+2. Two chromosomes are randomly chosen from the population and the best of them is selected for next generation. Keep doing that until the next generation is filled.
+   
 
 ```python
 def binary_selection(populationlist, makespan_list):
