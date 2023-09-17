@@ -120,7 +120,7 @@ chromosome has 36 genes and if the mutation selection rate equals to 0.5, the nu
 
 <br>
 <div align=center>
-<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/mutation.gif" width="780" height="420">
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/mutation.gif" width="780" height="380">
 </div>
 <br>
 
