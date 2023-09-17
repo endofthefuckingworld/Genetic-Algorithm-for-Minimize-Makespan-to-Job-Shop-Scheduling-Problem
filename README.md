@@ -157,6 +157,7 @@ def binary_selection(populationlist, makespan_list):
     
     return new_population
 ```
+
 ### :arrow_down_small: Main function <br>
 The following will outline the various steps of implementing a genetic algorithm. First, declare the parameters of the genetic algorithm, then read the file, generate the initial population, perform crossover and mutation, proceed with the selection of the next generation, and repeat this process until all loops are completed. Finally, output the scheduling results and a convergence chart showing the decrease in makespan.
 ```python
