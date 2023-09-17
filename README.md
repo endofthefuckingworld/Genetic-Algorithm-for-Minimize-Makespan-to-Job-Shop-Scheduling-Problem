@@ -83,6 +83,7 @@ def job_order_implementation(parent1, parent2, select_job):
 chromosome has 36 genes and if the mutation selection rate equals to 0.5, the number of genes to shift is 18.  
 3. Perform gene shifting, as illustrated in the diagram.
 4. For the last 10% child, replace them with randomly initialize population.
+
 ```python
 def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
     for chromosome in childlist:
