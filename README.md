@@ -14,6 +14,7 @@ Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 cor
 
 ### :arrow_down_small: Initial Population Generation <br>
 Generate an initial population of schedules. Each schedule represents a possible solution to the JSSP. You can initialize the population randomly or using domain-specific knowledge such as dispatching rules or other heuristic methods. We use randomly initialize the population here.
+
 ```python
 def generate_init_pop(population_size, j, m):
     population_list = np.zeros((population_size, int(j*m)), dtype = np.int32)
@@ -38,3 +39,35 @@ Apply crossover operators to pairs of parent schedules to create new child sched
 3. Copy all job j from parent 1 to child 1 with the same position.  
 4. The remaining empty positions in child 1 are filled with the genes of parent 2 that are different from the job j.
 
+```python
+def job_order_crossover(populationlist, j, crossover_rate):
+    parentlist = copy.deepcopy(populationlist)
+    childlist = copy.deepcopy(populationlist)
+    for i in range(len(parentlist),2):
+        sample_prob=np.random.rand()
+        if sample_prob <= crossover_rate:
+            parent_id = np.random.choice(len(populationlist), 2, replace=False) #A pair of parents (chromosomes) are randomly selected from the population pool.
+            select_job = np.random.choice(j, 1, replace=False)[0] #Ramdomly select one job j.
+            child_1 = job_order_implementation(parentlist[parent_id[0]], parentlist[parent_id[1]], select_job)
+            child_2 = job_order_implementation(parentlist[parent_id[1]], parentlist[parent_id[0]], select_job)
+            childlist[i] = child_1
+            childlist[i+1] = child_2
+
+    return parentlist, childlist
+
+def job_order_implementation(parent1, parent2, select_job):
+    other_job_order = []
+    child = np.zeros(len(parent1))
+    for j in parent2:
+        if j != select_job:
+            other_job_order.append(j)
+    k = 0
+    for i,j in enumerate(parent1):
+        if j == select_job:
+            child[i] = j  #Copy all job j from parent1 to child1 with the same position.
+        else:
+            child[i] = other_job_order[k]  #The remaining empty positions are filled with the genes of parent2 that are different from the job j.
+            k += 1
+    
+    return child
+```
