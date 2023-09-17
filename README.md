@@ -15,7 +15,7 @@ Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 cor
 
 ### :arrow_down_small: Fitness Evaluation <br>
 Evaluate the fitness(Minimized Makespan) of each schedule in the population.According to the formulation of JSSP, The primary constraints in the JSSP include precedence constraints and machine sharing constraints:  
-1. Precedence constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.
+1. Precedence Constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.
 2. Machine Sharing Constraints: Each machine has its own availability and can only process one operation at a time. This constraint ensures that no machine is overutilized or double-booked.  
 Therefore,the completion time of an operation must be greater to the process time plus completion time of the machine that operation assigned to and the previous operation of the same job. We can use this way to evaluate the makespan of the chromosome.
 
@@ -27,7 +27,7 @@ def compute_makespan(chromosome, p_t, m_seq):
     m_time = np.zeros(p_t.shape[1])
 
     for j in chromosome:
-        completion_t = max(j_time[j], m_time[m_seq[j,op_count[j]]]) + p_t[j,op_count[j]] #Precedence constraints and Machine Sharing Constraints
+        completion_t = max(j_time[j], m_time[m_seq[j,op_count[j]]]) + p_t[j,op_count[j]] #Precedence constraints and machine sharing constraints
         j_time[j] = completion_t
         m_time[m_seq[j,op_count[j]]] = completion_t
         op_count[j] += 1
