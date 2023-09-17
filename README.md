@@ -78,7 +78,32 @@ def job_order_implementation(parent1, parent2, select_job):
 
 Ｍutation introduces additional variability into the population, which helps prevent it from prematurely converging towards a local optimum. We mutate genes through gene shifting and the process is as follows:
   
-1.If the sample probability of a child is less or equal than the mutation probability parameter, the mutation is then executed.  
-2.Randomly select the genes to be shifted and the number of genes to mutate is based on the mutation selection rate. For example, Each 
+1. If the sample probability of a child is less or equal than the mutation probability parameter, the mutation is then executed.  
+2. Randomly select the genes to be shifted and the number of genes to mutate is based on the mutation selection rate. For example, Each 
 chromosome has 36 genes and if the mutation selection rate equals to 0.5, the number of genes to shift is 18.  
-3.Perform gene shifting, as illustrated in the diagram.  
+3. Perform gene shifting, as illustrated in the diagram.
+4. For the last 10% child, replace them with randomly initialize population.
+```python
+def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
+    for chromosome in childlist:
+        sample_prob = np.random.rand()
+        if sample_prob <= mutation_rate:
+            mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace = False)
+            chrom_copy = copy.deepcopy(chromosome)
+            for i in range(len(mutationpoints)-1):
+                chromosome[mutationpoints[i+1]] = chrom_copy[mutationpoints[i]]
+
+            chromosome[mutationpoints[0]] = chrom_copy[mutationpoints[-1]]
+    
+    makespan_list = np.zeros(len(childlist))
+    for i,chromosome in enumerate(childlist):
+        makespan_list[i] = compute_makespan(chromosome, p_t, m_seq)
+    
+    num_all_mut = int(0.1*len(childlist))
+    zipped = list(zip(makespan_list, np.arange(len(makespan_list))))
+    sorted_zipped = sorted(zipped, key=lambda x: x[0])
+    zipped = zip(*sorted_zipped)
+    partial_mut_id = np.asarray(list(zipped)[1])[:-num_all_mut]
+    all_mut = generate_init_pop(num_all_mut, p_t.shape[0], p_t.shape[1])
+    childlist = np.concatenate((all_mut,copy.deepcopy(childlist)[partial_mut_id]), axis = 0)
+```
