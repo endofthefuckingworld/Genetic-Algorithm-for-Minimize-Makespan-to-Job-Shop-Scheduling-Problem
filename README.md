@@ -72,6 +72,7 @@ Apply crossover operators to pairs of parent schedules to create new child sched
 <img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/crossover.gif" width="780" height="420">
 </div>
 <br>
+
 ```python
 def job_order_crossover(populationlist, j, crossover_rate):
     parentlist = copy.deepcopy(populationlist)
@@ -104,6 +105,7 @@ def job_order_implementation(parent1, parent2, select_job):
     
     return child
 ```
+
 ### :arrow_down_small: Mutation <br>
 
 Ｍutation introduces additional variability into the population, which helps prevent it from prematurely converging towards a local optimum. We mutate genes through gene shifting and the process is as follows:
