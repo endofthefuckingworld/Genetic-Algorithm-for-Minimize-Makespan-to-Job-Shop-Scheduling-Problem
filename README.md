@@ -12,7 +12,11 @@ In the context of the Job Shop Scheduling Problem (JSSP), encoding refers to how
 
 **Example:**
 Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 correspond to different jobs. In this encoding, The first gene (2) represents the first operation of Job 2,the second gene (3) represents the first operation of Job 3 and the third gene (2) represents the second operation of Job 2.
-
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/encoding.gif" width="780" height="420">
+</div>
+<br>
 ### :arrow_down_small: Fitness Evaluation <br>
 Evaluate the fitness(Minimized Makespan) of each schedule in the population.According to the formulation of JSSP, The primary constraints in the JSSP include precedence constraints and machine sharing constraints:  
 1. Precedence Constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.
