@@ -17,6 +17,7 @@ Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 cor
 <img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/encoding.gif" width="780" height="420">
 </div>
 <br>
+
 ### :arrow_down_small: Fitness Evaluation <br>
 Evaluate the fitness(Minimized Makespan) of each schedule in the population.According to the formulation of JSSP, The primary constraints in the JSSP include precedence constraints and machine sharing constraints:  
 1. Precedence Constraints: certain operations must be performed in a specific order. This means that certain jobs cannot start until others are completed.
@@ -72,6 +73,7 @@ Apply crossover operators to pairs of parent schedules to create new child sched
 <img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/crossover.gif" width="780" height="420">
 </div>
 <br>
+
 
 ```python
 def job_order_crossover(populationlist, j, crossover_rate):
