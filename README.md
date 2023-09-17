@@ -157,3 +157,47 @@ def binary_selection(populationlist, makespan_list):
     
     return new_population
 ```
+### :arrow_down_small: Main function <br>
+The following will outline the various steps of implementing a genetic algorithm. First, declare the parameters of the genetic algorithm, then read the file, generate the initial population, perform crossover and mutation, proceed with the selection of the next generation, and repeat this process until all loops are completed. Finally, output the scheduling results and a convergence chart showing the decrease in makespan.
+```python
+if __name__ == "__main__":
+    instance_name = "la01"
+    j, m, p_t, m_seq = read_file(instance_name)
+    population_size = 100
+    population_list = generate_init_pop(population_size, j ,m)
+    crossover_rate = 1.0
+    mutation_rate = 0.15
+    mutation_selection_rate = 0.15
+    num_mutation_jobs=round(j*m*mutation_selection_rate)
+    num_iteration = 1000
+    min_makespan_record = []
+    avg_makespan_record = []
+    min_makespan = 9999999
+
+    for i in tqdm(range(num_iteration)):
+        parentlist, childlist = job_order_crossover(population_list, j, crossover_rate)
+        mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq)
+        population_list = np.concatenate((parentlist, childlist), axis=0)
+        makespan_list = np.zeros(len(population_list))
+        for k in range(len(population_list)):
+            makespan_list[k] = compute_makespan(population_list[k], p_t, m_seq)
+            if makespan_list[k] < min_makespan:
+                min_makespan = makespan_list[k]
+                best_job_order = population_list[k]
+        
+        population_list = binary_selection(population_list, makespan_list)
+        min_makespan_record.append(min_makespan)
+        avg_makespan_record.append(np.average(makespan_list))
+
+    print(min_makespan)
+    print(best_job_order)
+
+    import matplotlib.pyplot as plt
+    plt.plot([i for i in range(len(min_makespan_record))],min_makespan_record,'b',label='Best')
+    plt.plot([i for i in range(len(avg_makespan_record))],avg_makespan_record,'g',label='Average')
+    plt.ylabel('makespan',fontsize=15)
+    plt.xlabel('generation',fontsize=15)
+    plt.legend()
+    plt.title("Decreasing of the makespan in "+instance_name)
+    plt.show()
+```
