@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import copy
 import math
+import time
 from tqdm import tqdm
 
 def read_file(filename):
@@ -195,44 +196,64 @@ def binary_selection(populationlist, makespan_list):
     return new_population
 
 if __name__ == "__main__":
-    instance_name = "la01"
-    j, m, p_t, m_seq = read_file(instance_name)
-    population_size = 100
-    population_list = generate_init_pop(population_size, j ,m)
-    crossover_rate = 1.0
-    mutation_rate = 0.15
-    mutation_selection_rate = 0.15
-    num_mutation_jobs=round(j*m*mutation_selection_rate)
-    num_iteration = 1000
-    min_makespan_record = []
-    avg_makespan_record = []
-    min_makespan = 9999999
+    df = pd.read_excel("./Data/lower_bounds.xlsx", sheet_name="orb")
+    
+    time_list = []
+    ratio_list = []
+    outDf = pd.DataFrame()
+    for index in range(1,11):
+        instance_name = "orb0"+str(index)
+        if(index >= 10):instance_name = "orb"+str(index)
+        j, m, p_t, m_seq = read_file(instance_name)
+        population_size = 400
+        population_list = generate_init_pop(population_size, j ,m)
+        crossover_rate = 1.0
+        mutation_rate = 0.15
+        mutation_selection_rate = 0.15
+        num_mutation_jobs=round(j*m*mutation_selection_rate)
+        num_iteration = 50
+        min_makespan_record = []
+        avg_makespan_record = []
+        min_makespan = 9999999
 
-    for i in tqdm(range(num_iteration)):
-        parentlist, childlist = job_order_crossover(population_list, j, crossover_rate)
-        mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq)
-        population_list = np.concatenate((parentlist, childlist), axis=0)
-        makespan_list = np.zeros(len(population_list))
-        for k in range(len(population_list)):
-            makespan_list[k] = compute_makespan(population_list[k], p_t, m_seq)
-            if makespan_list[k] < min_makespan:
-                min_makespan = makespan_list[k]
-                best_job_order = population_list[k]
         
-        population_list = binary_selection(population_list, makespan_list)
-        min_makespan_record.append(min_makespan)
-        avg_makespan_record.append(np.average(makespan_list))
+        begint = time.time()
+        for i in tqdm(range(num_iteration)):
+            parentlist, childlist = job_order_crossover(population_list, j, crossover_rate)
+            mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq)
+            population_list = np.concatenate((parentlist, childlist), axis=0)
+            makespan_list = np.zeros(len(population_list))
+            for k in range(len(population_list)):
+                makespan_list[k] = compute_makespan(population_list[k], p_t, m_seq)
+                if makespan_list[k] < min_makespan:
+                    min_makespan = makespan_list[k]
+                    best_job_order = population_list[k]
+            
+            population_list = binary_selection(population_list, makespan_list)
+            min_makespan_record.append(min_makespan)
+            avg_makespan_record.append(np.average(makespan_list))
+        
+        time_consume = time.time() - begint
+        ratio = (min_makespan - df["lower bound"][index-1])/df["lower bound"][index-1]
+        time_list.append(time)
+        ratio_list.append(ratio)
 
-    print(min_makespan)
-    print(best_job_order)
+        row_input = pd.DataFrame([[min_makespan, df["lower bound"][index-1], time_consume]], columns = ["GA","Optimal","time(sec)"])
+        outDf = outDf.append(row_input, ignore_index=True)
+
+
+
+    outDf.to_csv("Result.csv")
+
     import matplotlib.pyplot as plt
-    plt.plot([i for i in range(len(min_makespan_record))],min_makespan_record,'b',label='Best')
-    plt.plot([i for i in range(len(avg_makespan_record))],avg_makespan_record,'g',label='Average')
-    plt.ylabel('makespan',fontsize=15)
-    plt.xlabel('generation',fontsize=15)
+    plt.plot([i for i in range(len(ratio_list))],ratio_list,'b',label='ratio')
+    plt.ylabel('Error Ratio',fontsize=15)
+    plt.xlabel('ORB instance',fontsize=15)
     plt.legend()
-    plt.title("Decreasing of the makespan in "+instance_name)
+    plt.title("GA solution for ORB instances")
+    plt.xticks(range(len(ratio_list)))
     plt.show()
+    
     
 
         
