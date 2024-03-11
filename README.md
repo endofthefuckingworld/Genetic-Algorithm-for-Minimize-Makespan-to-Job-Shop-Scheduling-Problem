@@ -12,6 +12,11 @@ In the context of the Job Shop Scheduling Problem (JSSP), encoding refers to how
 
 **Example:**
 Let's consider the chromosome [2, 3, 2, 1, 1, 3, 2, 3, 1], where 1, 2, and 3 correspond to different jobs. In this encoding, The first gene (2) represents the first operation of Job 2,the second gene (3) represents the first operation of Job 3 and the third gene (2) represents the second operation of Job 2.
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/encoding.gif" width="780" height="420">
+</div>
+<br>
 
 ### :arrow_down_small: Fitness Evaluation <br>
 Evaluate the fitness(Minimized Makespan) of each schedule in the population.According to the formulation of JSSP, The primary constraints in the JSSP include precedence constraints and machine sharing constraints:  
@@ -63,6 +68,13 @@ Apply crossover operators to pairs of parent schedules to create new child sched
 3. Copy all job j from parent 1 to child 1 with the same position.  
 4. The remaining empty positions in child 1 are filled with the genes of parent 2 that are different from the job j.
 
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/crossover.gif" width="780" height="420">
+</div>
+<br>
+
+
 ```python
 def job_order_crossover(populationlist, j, crossover_rate):
     parentlist = copy.deepcopy(populationlist)
@@ -95,6 +107,7 @@ def job_order_implementation(parent1, parent2, select_job):
     
     return child
 ```
+
 ### :arrow_down_small: Mutation <br>
 
 Ｍutation introduces additional variability into the population, which helps prevent it from prematurely converging towards a local optimum. We mutate genes through gene shifting and the process is as follows:
@@ -104,6 +117,12 @@ def job_order_implementation(parent1, parent2, select_job):
 chromosome has 36 genes and if the mutation selection rate equals to 0.5, the number of genes to shift is 18.  
 3. Perform gene shifting, as illustrated in the diagram.
 4. For the last 10% child, replace them with randomly initialized population.
+
+<br>
+<div align=center>
+<img src="https://github.com/endofthefuckingworld/Genetic-Algorithm-for-Minimize-Makespan-to-Job-Shop-Scheduling-Problem/blob/main/Picture/mutation.gif" width="780" height="320">
+</div>
+<br>
 
 ```python
 def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
@@ -129,9 +148,10 @@ def mutation(childlist, num_mutation_jobs, mutation_rate, p_t, m_seq):
     all_mut = generate_init_pop(num_all_mut, p_t.shape[0], p_t.shape[1])
     childlist = np.concatenate((all_mut,copy.deepcopy(childlist)[partial_mut_id]), axis = 0)
 ```
+
 ### :arrow_down_small: Selection <br>
-Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it here and the process is as follows:  
-1. The top 10% chromosomes are guarantee to keep for the next generation.
+Select schedules from the population to act as parents for the next generation. Common selection methods include roulette wheel selection, tournament selection, and rank-based selection. According to ([Pezzella, Ferdinando, Gianluca Morganti, and Giampiero Ciaschetti (2008)](https://www.sciencedirect.com/science/article/pii/S0305054807000524)), binary tournament gives great results so we decide to use it and the process is as follows:  
+1. The top 10% of chromosomes are guaranteed to be kept for the next generation.
 2. Two chromosomes are randomly chosen from the population and the best of them is selected for next generation. Keep doing that until the next generation is filled.
    
 
