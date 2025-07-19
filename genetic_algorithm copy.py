@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from itertools import permutations
 import random
 
+# Seaborn styles
+sns.set()
 
 def read_file(filename):
     path = 'Data/'+filename
@@ -31,44 +33,18 @@ def read_file(filename):
     return int(j), int(m), p_t, m_seq
 
 def compute_makespan(chromosome, p_t, m_seq):
-    n_jobs, n_ops = p_t.shape
-    op_count = np.zeros(n_jobs, dtype=int)
-    j_time = np.zeros(n_jobs)
-    machine_schedules = [[] for _ in range(n_ops)]  # 每台機台的已排程區段 (start, end)
-
-    def find_earliest_insert(machine_id, job_ready, duration):
-        schedule = machine_schedules[machine_id]
-        if not schedule:
-            return job_ready  # 無任何任務，直接插入
-
-        # 檢查每個空檔區間
-        last_end = 0
-        for start, end in schedule:
-            if job_ready > end:
-                last_end = end
-                continue
-            if job_ready <= start and start - max(job_ready, last_end) >= duration:
-                return max(job_ready, last_end)
-            last_end = end
-        return max(job_ready, last_end)
-
+    op_count = np.zeros(p_t.shape[0], dtype = np.int32)
+    j_time = np.zeros(p_t.shape[0])
+    m_time = np.zeros(p_t.shape[1])
     for j in chromosome:
-        op_idx = op_count[j]
-        machine_id = m_seq[j, op_idx]
-        duration = p_t[j, op_idx]
-        job_ready = j_time[j]
-
-        # 找出最早可以插入的時間（允許插空檔）
-        start_time = find_earliest_insert(machine_id, job_ready, duration)
-        end_time = start_time + duration
-
-        # 更新排程狀態
-        machine_schedules[machine_id].append((start_time, end_time))
-        machine_schedules[machine_id].sort()  # 保持時間排序
-        j_time[j] = end_time
+        completion_t = max(j_time[j], m_time[m_seq[j,op_count[j]]]) + p_t[j,op_count[j]]
+        j_time[j] = completion_t
+        m_time[m_seq[j,op_count[j]]] = completion_t
         op_count[j] += 1
 
-    return max(j_time)
+    makespan = max(j_time)
+
+    return makespan
             
 def generate_init_pop(population_size, j, m):
     population_list = np.zeros((population_size, int(j*m)), dtype = np.int32)
@@ -100,75 +76,52 @@ def job_order_crossover(populationlist, j, crossover_rate):
     return parentlist, childlist
 
 def job_order_implementation(parent1, parent2, select_job):
-    child = np.empty(len(parent1), dtype=int)
-    
-    # 提取 parent2 中所有非 select_job 的作業順序
-    other_jobs = [j for j in parent2 if j != select_job]
-    
+    other_job_order = []
+    child = np.zeros(len(parent1))
+    for j in parent2:
+        if j != select_job:
+            other_job_order.append(j)
     k = 0
-    for i, j in enumerate(parent1):
+    for i,j in enumerate(parent1):
         if j == select_job:
             child[i] = j
         else:
-            child[i] = other_jobs[k]
+            child[i] = other_job_order[k]
             k += 1
-
+    
     return child
     
 def mutation(childlist, mutation_rate, num_mutation_jobs, p_t, m_seq):
-    for idx, chromosome in enumerate(childlist):
-        random_values = np.random.rand(2)
-        if random_values[0] <= mutation_rate:
-            mutated = chromosome.copy()
-            if random_values[1] < 0.5:
-                # permutation-based mutation
-                mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace=False)
-                all_permutations = list(permutations(mutationpoints))
-
-                best_chromosome = mutated
-                min_makespan = compute_makespan(mutated, p_t, m_seq)
-
-                for perm in all_permutations[1:]:
-                    new_chrom = mutated.copy()
-                    for i in range(len(mutationpoints)):
-                        new_chrom[mutationpoints[i]] = mutated[perm[i]]
-                    makespan = compute_makespan(new_chrom, p_t, m_seq)
-                    if makespan < min_makespan:
-                        min_makespan = makespan
-                        best_chromosome = new_chrom
-
-                mutated = best_chromosome
-
-            elif random_values[1] < 0.7:
-                # inversion mutation
-                i, j = sorted(np.random.choice(len(chromosome), 2, replace=False))
-                mutated[i:j+1] = mutated[i:j+1][::-1]
-
-            else:
-                # job shuffle mutation
-                mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace=False)
-                shuffled_points = np.random.permutation(mutationpoints)
-                chrom_copy = mutated.copy()
+    for i, chromosome in enumerate(childlist):
+        sample_prob = np.random.rand()
+        if sample_prob <= mutation_rate:
+            mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace = False)
+            all_permutations = list(permutations(mutationpoints))
+            chrom_copy = copy.deepcopy(chromosome)
+            min_makespan = 99999999
+            for j in range(1,len(all_permutations)):
                 for i in range(len(mutationpoints)):
-                    mutated[mutationpoints[i]] = chrom_copy[shuffled_points[i]]
+                    chromosome[mutationpoints[i]] = chrom_copy[all_permutations[j][i]]
 
-            # 更新 childlist 中的個體
-            childlist[idx] = mutated
+                makespan = compute_makespan(chromosome, p_t, m_seq)
+                if(makespan < min_makespan):
+                    childlist[i] = chromosome
+                    min_makespan = makespan
+            
+        
+    makespan_list = np.zeros(len(childlist))
+    for i,chromosome in enumerate(childlist):
+        makespan_list[i] = compute_makespan(chromosome, p_t, m_seq)
 
-    # Compute makespans
-    makespan_list = np.array([compute_makespan(chrom, p_t, m_seq) for chrom in childlist])
-
-    # Select top 90%
-    num_all_mut = min(int(0.1 * len(childlist)), len(childlist) - 1)
-    sorted_indices = np.argsort(makespan_list)
-    partial_mut_id = sorted_indices[:-num_all_mut]
-
-    # Inject 10% new individuals
+    num_all_mut = int(0.1*len(childlist))
+    zipped = list(zip(makespan_list, np.arange(len(makespan_list))))
+    sorted_zipped = sorted(zipped, key=lambda x: x[0])
+    zipped = zip(*sorted_zipped)
+    partial_mut_id = np.asarray(list(zipped)[1])[:-num_all_mut]
     all_mut = generate_init_pop(num_all_mut, p_t.shape[0], p_t.shape[1])
-    retained = [copy.deepcopy(childlist[i]) for i in partial_mut_id]
-
-    # Combine and return new population
-    return np.array(retained + list(all_mut))
+    childlist = np.concatenate((all_mut,copy.deepcopy(childlist)[partial_mut_id]), axis = 0)
+    
+    return childlist           
 
 def binary_selection(populationlist, makespan_list):
     new_population = np.zeros((int(len(populationlist)/2), populationlist.shape[1]), dtype = np.int32)
@@ -189,132 +142,102 @@ def binary_selection(populationlist, makespan_list):
     
     new_population[-num_self_select:] = copy.deepcopy(populationlist)[self_select_id]
     
-    return new_population   
+    return new_population
 
-def get_critical_blocks(chromosome, p_t, m_seq):
-    op_count = np.zeros(p_t.shape[0], dtype=np.int32)
-    j_time = np.zeros(p_t.shape[0])
-    m_time = np.zeros(p_t.shape[1])
+def get_critical_path(chromosome,p_t, m_seq):
+    critical_path = []
     start_t = np.zeros(len(chromosome))
     end_t = np.zeros(len(chromosome))
-    m_list = []
 
-    for i, job in enumerate(chromosome):
-        m_id = m_seq[job, op_count[job]]
-        m_list.append(m_id)
-        start = max(j_time[job], m_time[m_id])
-        end = start + p_t[job, op_count[job]]
-        start_t[i] = start
-        end_t[i] = end
-        j_time[job] = end
-        m_time[m_id] = end
-        op_count[job] += 1
+    op_count = np.zeros(p_t.shape[0], dtype = np.int32)
+    j_time = np.zeros(p_t.shape[0])
+    m_time = np.zeros(p_t.shape[1])
+
+    for i,j in enumerate(chromosome):
+        completion_t = max(j_time[j], m_time[m_seq[j,op_count[j]]]) + p_t[j,op_count[j]]
+        start_t[i] = max(j_time[j], m_time[m_seq[j,op_count[j]]])
+        end_t[i] = completion_t
+        j_time[j] = completion_t
+        m_time[m_seq[j,op_count[j]]] = completion_t
+        op_count[j] += 1
 
     makespan = max(j_time)
-    critical_path = []
-    last_end = makespan
-    for i in range(len(chromosome)-1, -1, -1):
-        if end_t[i] == last_end:
+    last_end_t = makespan
+    for i in range(len(chromosome) - 1, -1, -1):
+        if end_t[i] == last_end_t:
             critical_path.insert(0, i)
-            last_end = start_t[i]
+            last_end_t = start_t[i]
 
-    # 找出 block: 關鍵路徑中，同一機台連續 operation
-    blocks = []
-    if not critical_path:
-        return [], makespan, m_list
-
-    start_idx = 0
-    for i in range(1, len(critical_path)):
-        curr_idx = critical_path[i]
-        prev_idx = critical_path[i-1]
-        if m_list[curr_idx] != m_list[prev_idx]:
-            if i - start_idx >= 2:
-                blocks.append(critical_path[start_idx:i])
-            start_idx = i
-    if len(critical_path) - start_idx >= 2:
-        blocks.append(critical_path[start_idx:])
-
-    return blocks, makespan, m_list
-
-def apply_move(chrom, i, j):
-    new_chrom = chrom.copy()
-    new_chrom[i], new_chrom[j] = new_chrom[j], new_chrom[i]
-    return new_chrom
-
-def tabu_search_ns1996(chromosome, p_t, m_seq, max_iter=100, tabu_tenure=7):
-    current = chromosome.copy()
-    best = current.copy()
-    best_makespan = compute_makespan(best, p_t, m_seq)
-    tabu_list = []
-
-    for _ in range(max_iter):
-        blocks, _, m_list = get_critical_blocks(current, p_t, m_seq)
-        found_better = False
-        move_applied = None
-
-        for block in blocks:
-            if len(block) < 2:
-                continue
-
-            candidate_moves = []
-            # Swap first two
-            i1, i2 = block[0], block[1]
-            if (i1, i2) not in tabu_list:
-                candidate_moves.append((i1, i2))
-
-            # Swap last two
-            j1, j2 = block[-2], block[-1]
-            if (j1, j2) not in tabu_list and (j1, j2) != (i1, i2):
-                candidate_moves.append((j1, j2))
-
-            for i, j in candidate_moves:
-                neighbor = apply_move(current, i, j)
-                new_makespan = compute_makespan(neighbor, p_t, m_seq)
-                if new_makespan < best_makespan:
-                    best = neighbor
-                    best_makespan = new_makespan
-                    current = neighbor
-                    move_applied = (i, j)
-                    found_better = True
-                    break
-            if found_better:
-                break
-
-        if found_better and move_applied:
-            tabu_list.append(move_applied)
-            if len(tabu_list) > tabu_tenure:
-                tabu_list.pop(0)
-        else:
-            break  # No improving move found → local optimum
-
-    return best, best_makespan
-
-def intensify_top10_with_tabu(population_list, p_t, m_seq, tabu_iter=100, tabu_tenure=7):
-    """
-    對前 10% makespan 最佳的染色體進行 Tabu Search 強化，
-    並回傳：
-        - 強化後的 population
-        - 最佳 makespan
-        - 對應的基因序列（chromosome）
-    """
-    population_size = len(population_list)
-    makespan_list = np.array([compute_makespan(chrom, p_t, m_seq) for chrom in population_list])
+    return critical_path
     
-    # 取前 10% 的 index
-    num_to_improve = max(1, int(0.1 * population_size))
-    best_indices = np.argsort(makespan_list)[:num_to_improve]
+def get_neighbors(chromosome, indices, m_seq):
+    # Generate neighboring solutions by swapping pairs of operations
+    neighbors = []
+    op_count = np.zeros(m_seq.shape[0], np.int32)
+    m_list = []
+    for j in chromosome:
+        m_list.append(m_seq[j,op_count[j]])
+        op_count[j] += 1
+    
+    for i in range(len(indices)-1):
+        neighbor = chromosome[:]
+        if m_list[indices[i]] == m_list[indices[i+1]]:
+            neighbor[indices[i]], neighbor[indices[i+1]] = neighbor[indices[i+1]], neighbor[indices[i]]
+        neighbors.append(neighbor)
 
-    for idx in best_indices:
-        improved, improved_makespan = tabu_search_ns1996(population_list[idx], p_t, m_seq, max_iter=tabu_iter, tabu_tenure=tabu_tenure)
-        population_list[idx] = improved
-        makespan_list[idx] = improved_makespan
+    return neighbors
 
-    # 找到最佳解
-    min_idx = np.argmin(makespan_list)
-    min_makespan = makespan_list[min_idx]
-    best_chromosome = population_list[min_idx]
+def tabu_search(population_list, makespan_list, m_seq, max_iterations, tabu_tenure):
+    num_all_ts = int(0.1*len(population_list))
+    zipped = list(zip(makespan_list, population_list))
+    sorted_zipped = sorted(zipped, key=lambda x: x[0])
+    sorted_makespans, sorted_population = zip(*sorted_zipped)
+    ts_population = np.asarray(sorted_population)[:num_all_ts]
+    non_ts_population = np.asarray(sorted_population)[num_all_ts:]
 
-    return population_list, min_makespan, best_chromosome
+    tabu_list = []
+    for i, chromosome in enumerate(ts_population):
+        current_solution = chromosome
+        best_makespan = makespan_list[i]
+        best_solution = chromosome
+        unimprovement = 0
+        for iteration in range(max_iterations):
+            critical_path = get_critical_path(current_solution, p_t, m_seq)
+            neighbors = get_neighbors(current_solution, critical_path, m_seq)
+            best_neighbor = None
+            best_neighbor_makespan = float('inf')
+            
+            for neighbor in neighbors:
+                if not any(np.array_equal(neighbor, tabu) for tabu in tabu_list):
+                    neighbor_makespan = compute_makespan(neighbor, p_t, m_seq)
+                    if neighbor_makespan < best_neighbor_makespan:
+                        best_neighbor = neighbor
+                        best_neighbor_makespan = neighbor_makespan
+                        
+            
+            if best_neighbor is not None:
+                current_solution = best_neighbor
+                current_makespan = best_neighbor_makespan
+
+                # Update the best solution found
+                if current_makespan < best_makespan:
+                    best_solution = current_solution
+                    best_makespan = current_makespan
+                    ts_population[i] = best_solution
+                    
+                else:
+                    unimprovement += 1
+
+                if unimprovement > 20:
+                    break
+                # Update the tabu list
+                tabu_list.append(current_solution)
+                if len(tabu_list) > tabu_tenure:
+                    tabu_list.pop(0)  # Remove oldest tabu entry
+            else:
+                break 
+    childlist = np.concatenate((ts_population, non_ts_population), axis = 0)
+    return  population_list, best_makespan, best_solution
 
 def draw_bar_plot(filename, listx):
     df = pd.read_csv(filename)
@@ -398,12 +321,12 @@ if __name__ == "__main__":
         instance_name = "orb0"+str(index)
         if(index >= 10):instance_name = "orb"+str(index)
         j, m, p_t, m_seq = read_file(instance_name)
-        population_size = 400
+        population_size = 200
         population_list = generate_init_pop(population_size, j ,m)
         crossover_rate = 0.95
         mutation_rate = 0.15
         max_mutatio_rate = 0.4
-        num_iteration = 200
+        num_iteration = 1000
         min_makespan_record = []
         avg_makespan_record = []
         min_makespan = 9999999
@@ -426,12 +349,12 @@ if __name__ == "__main__":
                     best_maksapn_not_changed += 1
    
             population_list = binary_selection(population_list, makespan_list)
-            population_list, min_ts_makespan, min_ts_chromosome = intensify_top10_with_tabu(population_list, p_t, m_seq)
+            population_list, min_ts_makespan, min_ts_chromosome = tabu_search(population_list, makespan_list, m_seq, 1000, 9)
             if min_ts_makespan < min_makespan:
                 min_makespan = min_ts_makespan
                 min_c = min_ts_chromosome
 
-            mutation_rate = min(mutation_rate * (1+0.1*best_maksapn_not_changed/num_iteration),max_mutatio_rate)
+            #mutation_rate = min(mutation_rate * (1+0.1*best_maksapn_not_changed/num_iteration),max_mutatio_rate)
             min_makespan_record.append(min_makespan)
             avg_makespan_record.append(np.average(makespan_list))
 
@@ -441,7 +364,7 @@ if __name__ == "__main__":
             plt.savefig("orb"+str(index))
         time_consume = time.time() - begint
         ratio = (min_makespan - df["lower bound"][index-1])/df["lower bound"][index-1]
-        time_list.append(time_consume)
+        time_list.append(time)
         ratio_list.append(ratio)
         print(min_makespan, " ", df["lower bound"][index-1])
         draw_gantt_chart(min_c, p_t, m_seq, "Gantt Chart for GA on orb" + str(index)+ " instance")
