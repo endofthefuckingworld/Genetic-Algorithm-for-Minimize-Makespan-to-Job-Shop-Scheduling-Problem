@@ -31,44 +31,18 @@ def read_file(filename):
     return int(j), int(m), p_t, m_seq
 
 def compute_makespan(chromosome, p_t, m_seq):
-    n_jobs, n_ops = p_t.shape
-    op_count = np.zeros(n_jobs, dtype=int)
-    j_time = np.zeros(n_jobs)
-    machine_schedules = [[] for _ in range(n_ops)]  # 每台機台的已排程區段 (start, end)
-
-    def find_earliest_insert(machine_id, job_ready, duration):
-        schedule = machine_schedules[machine_id]
-        if not schedule:
-            return job_ready  # 無任何任務，直接插入
-
-        # 檢查每個空檔區間
-        last_end = 0
-        for start, end in schedule:
-            if job_ready > end:
-                last_end = end
-                continue
-            if job_ready <= start and start - max(job_ready, last_end) >= duration:
-                return max(job_ready, last_end)
-            last_end = end
-        return max(job_ready, last_end)
-
+    op_count = np.zeros(p_t.shape[0], dtype = np.int32)
+    j_time = np.zeros(p_t.shape[0])
+    m_time = np.zeros(p_t.shape[1])
     for j in chromosome:
-        op_idx = op_count[j]
-        machine_id = m_seq[j, op_idx]
-        duration = p_t[j, op_idx]
-        job_ready = j_time[j]
-
-        # 找出最早可以插入的時間（允許插空檔）
-        start_time = find_earliest_insert(machine_id, job_ready, duration)
-        end_time = start_time + duration
-
-        # 更新排程狀態
-        machine_schedules[machine_id].append((start_time, end_time))
-        machine_schedules[machine_id].sort()  # 保持時間排序
-        j_time[j] = end_time
+        completion_t = max(j_time[j], m_time[m_seq[j,op_count[j]]]) + p_t[j,op_count[j]]
+        j_time[j] = completion_t
+        m_time[m_seq[j,op_count[j]]] = completion_t
         op_count[j] += 1
 
-    return max(j_time)
+    makespan = max(j_time)
+    
+    return makespan
             
 def generate_init_pop(population_size, j, m):
     population_list = np.zeros((population_size, int(j*m)), dtype = np.int32)
@@ -120,8 +94,8 @@ def mutation(childlist, mutation_rate, num_mutation_jobs, p_t, m_seq):
         random_values = np.random.rand(2)
         if random_values[0] <= mutation_rate:
             mutated = chromosome.copy()
-            if random_values[1] < 0.5:
-                # permutation-based mutation
+            # permutation-based mutation
+            if random_values[1] <= 0.1:
                 mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace=False)
                 all_permutations = list(permutations(mutationpoints))
 
@@ -136,23 +110,15 @@ def mutation(childlist, mutation_rate, num_mutation_jobs, p_t, m_seq):
                     if makespan < min_makespan:
                         min_makespan = makespan
                         best_chromosome = new_chrom
-
-                mutated = best_chromosome
-
-            elif random_values[1] < 0.7:
-                # inversion mutation
-                i, j = sorted(np.random.choice(len(chromosome), 2, replace=False))
-                mutated[i:j+1] = mutated[i:j+1][::-1]
-
+                        mutated = best_chromosome
             else:
-                # job shuffle mutation
-                mutationpoints = np.random.choice(len(chromosome), num_mutation_jobs, replace=False)
-                shuffled_points = np.random.permutation(mutationpoints)
-                chrom_copy = mutated.copy()
+                mutationpoints = np.random.choice(len(chromosome), int(p_t.shape[0]*p_t.shape[1]*0.05), replace=False)
+                origin = mutationpoints.copy()
+                new_chrom = mutated.copy()
+                np.random.shuffle(mutationpoints)
                 for i in range(len(mutationpoints)):
-                    mutated[mutationpoints[i]] = chrom_copy[shuffled_points[i]]
+                    mutated[mutationpoints[i]] = new_chrom[origin[i]]
 
-            # 更新 childlist 中的個體
             childlist[idx] = mutated
 
     # Compute makespans
@@ -289,6 +255,10 @@ def tabu_search_ns1996(chromosome, p_t, m_seq, max_iter=100, tabu_tenure=7):
 
     return best, best_makespan
 
+def compute_diversity(population):
+    unique = np.unique(population, axis=0)
+    return len(unique) / len(population)
+
 def intensify_top10_with_tabu(population_list, p_t, m_seq, tabu_iter=100, tabu_tenure=7):
     """
     對前 10% makespan 最佳的染色體進行 Tabu Search 強化，
@@ -390,29 +360,34 @@ def draw_gantt_chart(chromosome, p_t, m_seq, title):
     plt.savefig("GanttPlot/"+title)
 
 if __name__ == "__main__":
-    df = pd.read_excel("./Data/lower_bounds.xlsx", sheet_name="orb")
+    problem = "la"
+    start = 26
+    end = 31
+    df = pd.read_excel("./Data/lower_bounds.xlsx", sheet_name = problem)
     time_list = []
     ratio_list = []
     outDf = pd.DataFrame()
-    for index in range(1,11):
-        instance_name = "orb0"+str(index)
-        if(index >= 10):instance_name = "orb"+str(index)
+    for index in range(start,end):
+        instance_name = problem+"0"+str(index)
+        if(index >= 10):instance_name = problem+str(index)
         j, m, p_t, m_seq = read_file(instance_name)
-        population_size = 400
+        population_size = 100
         population_list = generate_init_pop(population_size, j ,m)
         crossover_rate = 0.95
-        mutation_rate = 0.15
+        mutation_base_rate = 0.15
+        scale = 0.3
         max_mutatio_rate = 0.4
         num_iteration = 200
         min_makespan_record = []
         avg_makespan_record = []
         min_makespan = 9999999
-        best_maksapn_not_changed = 0
         begint = time.time()
 
         for i in tqdm(range(num_iteration)):
             parentlist, childlist = job_order_crossover(population_list, j, crossover_rate)
-            childlist = mutation(childlist, mutation_rate, 3, p_t, m_seq)
+            diversity = compute_diversity(population_list)
+            mutation_rate = mutation_base_rate + (1 - diversity) * scale
+            childlist = mutation(childlist, mutation_rate, int(j*m*0.025) , p_t, m_seq)
             population_list = np.concatenate((parentlist, childlist), axis=0)
             makespan_list = np.zeros(len(population_list))
             for k in range(len(population_list)):
@@ -421,35 +396,31 @@ if __name__ == "__main__":
                     min_m = makespan_list[k]
                     min_makespan = makespan_list[k]
                     min_c = population_list[k]
-                    best_maksapn_not_changed = 0
-                else:
-                    best_maksapn_not_changed += 1
-   
+
             population_list = binary_selection(population_list, makespan_list)
             population_list, min_ts_makespan, min_ts_chromosome = intensify_top10_with_tabu(population_list, p_t, m_seq)
             if min_ts_makespan < min_makespan:
                 min_makespan = min_ts_makespan
                 min_c = min_ts_chromosome
 
-            mutation_rate = min(mutation_rate * (1+0.1*best_maksapn_not_changed/num_iteration),max_mutatio_rate)
             min_makespan_record.append(min_makespan)
             avg_makespan_record.append(np.average(makespan_list))
 
-        if index == 1:    
+        if index == start:    
             plt.plot(avg_makespan_record)
             plt.plot(min_makespan_record)
             plt.savefig("orb"+str(index))
         time_consume = time.time() - begint
-        ratio = (min_makespan - df["lower bound"][index-1])/df["lower bound"][index-1]
+        ratio = (min_makespan - df["lower bound"][index-1])/df["lower bound"][index - 1]
         time_list.append(time_consume)
         ratio_list.append(ratio)
-        print(min_makespan, " ", df["lower bound"][index-1])
+        print(min_makespan, " ", df["lower bound"][index- 1])
         draw_gantt_chart(min_c, p_t, m_seq, "Gantt Chart for GA on orb" + str(index)+ " instance")
         row_input = pd.DataFrame([[min_makespan, df["lower bound"][index-1], time_consume]], columns = ["GA","Optimal","time(sec)"])
         outDf = pd.concat([outDf, row_input], ignore_index=True)
 
-    outDf.to_csv("Result.csv")
-    draw_bar_plot("Result.csv", ["orb"+str(i+1) for i in range(1, 11)])
+    outDf.to_csv("Result.csv", index = False)
+    draw_bar_plot("Result.csv", ["la"+str(i+1) for i in range(start, end)])
 
     
     
